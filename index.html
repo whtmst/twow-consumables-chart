@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор графика расходников</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #2b2d31;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            color: #dcddde;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .input-section {
+            background: #1e1f22;
+            border: 2px solid #3f4147;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .raid-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            color: #ffd100;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        input {
+            background: #313338;
+            color: #dcddde;
+            border: 1px solid #3f4147;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 14px;
+        }
+        input::placeholder {
+            color: #888;
+        }
+        input:focus {
+            outline: none;
+            border-color: #ff8000;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            min-height: 120px;
+            max-height: 600px;
+            background: #313338;
+            color: #dcddde;
+            border: 1px solid #3f4147;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        textarea::placeholder {
+            color: #888;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            background: #ff8000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #ff9000;
+        }
+        .screenshot-btn {
+            background: #00aaff;
+        }
+        .screenshot-btn:hover {
+            background: #0088cc;
+        }
+        .screenshot-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .output-section {
+            background: #1e1f22;
+            border: 2px solid #3f4147;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+        .chart-container {
+            background: #1e1f22;
+            border: 2px solid #3f4147;
+            border-radius: 8px;
+            padding: 20px 25px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            color: #ffd100;
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .column h2 {
+            color: #ff8000;
+            font-size: 16px;
+            margin: 0 0 12px 0;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+        .chart {
+            color: #dcddde;
+        }
+        .row {
+            margin-bottom: 5px;
+        }
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            font-size: 12px;
+        }
+        .name {
+            color: #00ff96;
+            font-weight: 600;
+        }
+        .value {
+            color: #ffd100;
+            font-weight: 600;
+        }
+        .deaths-value {
+            color: #ff4444;
+            font-weight: 600;
+        }
+        .bar-container {
+            background: #313338;
+            height: 16px;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .bar-gold {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd100 0%, #ff8000 100%);
+            border-radius: 3px;
+            box-shadow: 0 0 6px rgba(255, 209, 0, 0.4);
+        }
+        .bar-deaths {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%);
+            border-radius: 3px;
+            box-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+        }
+        .total {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #3f4147;
+            display: flex;
+            justify-content: space-around;
+            color: #dcddde;
+            font-size: 14px;
+        }
+        .total-item {
+            text-align: center;
+        }
+        .total-value {
+            color: #ffd100;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .total-deaths {
+            color: #ff4444;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .screenshot-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #3f4147;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-section">
+            <h2>Настройки рейда:</h2>
+            <div class="raid-info">
+                <div class="input-group">
+                    <label for="raidName">Название рейда:</label>
+                    <input type="text" id="raidName" placeholder="Например: Molten Core">
+                </div>
+                <div class="input-group">
+                    <label for="raidDate">Дата и время:</label>
+                    <input type="text" id="raidDate" placeholder="Например: 04.10.25 05:04 PM">
+                </div>
+            </div>
+            
+            <h2>Вставь данные логов:</h2>
+            <textarea id="logData" placeholder="Вставь сюда данные в формате:
+Игрок deaths:X
+   предмет количество (цена)
+   ...
+   total spent: Xg Xs Xc"></textarea>
+            <div class="controls">
+                <button onclick="parseData()">Сгенерировать график</button>
+                <button onclick="clearData()">Очистить</button>
+            </div>
+        </div>
+        
+        <div class="output-section">
+            <div id="chartOutput"></div>
+            <div id="screenshotControls" class="screenshot-controls" style="display: none;">
+                <button id="screenshotBtn" class="screenshot-btn" onclick="takeScreenshot()">📸 Сделать скриншот графика</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function parseData() {
+            const input = document.getElementById('logData').value;
+            const raidName = document.getElementById('raidName').value || 'Рейд';
+            const raidDate = document.getElementById('raidDate').value || 'Дата не указана';
+            
+            const lines = input.split('\n');
+            
+            const players = [];
+            let currentPlayer = null;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (!line) continue;
+                
+                // Поиск строки с deaths
+                const deathsMatch = line.match(/(.+?)\s+deaths:(\d+)/);
+                if (deathsMatch) {
+                    if (currentPlayer) {
+                        players.push(currentPlayer);
+                    }
+                    currentPlayer = {
+                        name: deathsMatch[1].trim(),
+                        deaths: parseInt(deathsMatch[2]),
+                        totalSpent: 0,
+                        items: []
+                    };
+                    continue;
+                }
+                
+                // Поиск total spent
+                const totalMatch = line.match(/total spent:\s*([\d.]+)g\s*([\d.]+)s\s*([\d.]+)c/);
+                if (totalMatch && currentPlayer) {
+                    const gold = parseFloat(totalMatch[1]) || 0;
+                    const silver = parseFloat(totalMatch[2]) || 0;
+                    const copper = parseFloat(totalMatch[3]) || 0;
+                    currentPlayer.totalSpent = gold + silver / 100 + copper / 10000;
+                    players.push(currentPlayer);
+                    currentPlayer = null;
+                    continue;
+                }
+                
+                // Пропускаем пустые строки и строки с <nothing found>
+                if (line.includes('<nothing found>') || !currentPlayer) {
+                    continue;
+                }
+                
+                // Парсим предметы (пропускаем строки без цен в скобках)
+                const itemMatch = line.match(/(.+?)\s+(\d+)\s+\(([^)]+)\)/);
+                if (itemMatch) {
+                    // Парсим цену
+                    const priceText = itemMatch[3];
+                    const priceMatch = priceText.match(/([\d.]+)g\s*([\d.]+)s\s*([\d.]+)c/);
+                    if (priceMatch) {
+                        const gold = parseFloat(priceMatch[1]) || 0;
+                        const silver = parseFloat(priceMatch[2]) || 0;
+                        const copper = parseFloat(priceMatch[3]) || 0;
+                        const totalPrice = gold + silver / 100 + copper / 10000;
+                        
+                        currentPlayer.items.push({
+                            name: itemMatch[1].trim(),
+                            quantity: parseInt(itemMatch[2]),
+                            price: totalPrice
+                        });
+                    }
+                }
+            }
+            
+            // Добавляем последнего игрока, если есть
+            if (currentPlayer) {
+                players.push(currentPlayer);
+            }
+            
+            generateChart(players, raidName, raidDate);
+        }
+        
+        function generateChart(players, raidName, raidDate) {
+            // Сортируем игроков по потраченной сумме (по убыванию)
+            const sortedByGold = players.filter(p => p.totalSpent > 0)
+                                      .sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            // Сортируем игроков по смертям (по убыванию), затем по имени
+            const sortedByDeaths = [...players].sort((a, b) => {
+                if (b.deaths !== a.deaths) {
+                    return b.deaths - a.deaths;
+                }
+                return a.name.localeCompare(b.name);
+            });
+            
+            // Находим максимальные значения для масштабирования
+            const maxGold = Math.max(...sortedByGold.map(p => p.totalSpent));
+            const maxDeaths = Math.max(...players.map(p => p.deaths));
+            
+            // Считаем общие суммы
+            const totalGold = players.reduce((sum, p) => sum + p.totalSpent, 0);
+            const totalDeaths = players.reduce((sum, p) => sum + p.deaths, 0);
+            
+            // Форматируем золото
+            function formatGold(amount) {
+                const gold = Math.floor(amount);
+                const silver = Math.floor((amount - gold) * 100);
+                const copper = Math.round(((amount - gold) * 100 - silver) * 100);
+                return `${gold.toFixed(0)}.${silver.toString().padStart(2, '0')}g`;
+            }
+            
+            // Генерируем HTML
+            let html = `
+                <div class="chart-container" id="chartContainer">
+                    <h1>Потраченная химия рейдом на ${raidName} (${raidDate})</h1>
+                    <div class="columns">
+                        <div class="column">
+                            <h2>💰 Расходники (голда)</h2>
+                            <div class="chart">
+            `;
+            
+            // Колонка с расходами
+            sortedByGold.forEach(player => {
+                const width = maxGold > 0 ? (player.totalSpent / maxGold * 100) : 0;
+                html += `
+                    <div class="row">
+                        <div class="player-info">
+                            <div class="name">${player.name}</div>
+                            <div class="value">${formatGold(player.totalSpent)}</div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-gold" style="width: ${width}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                            </div>
+                        </div>
+                        <div class="column">
+                            <h2>💀 Смерти</h2>
+                            <div class="chart">
+            `;
+            
+            // Колонка со смертями
+            sortedByDeaths.forEach(player => {
+                const width = maxDeaths > 0 ? (player.deaths / maxDeaths * 100) : 0;
+                html += `
+                    <div class="row">
+                        <div class="player-info">
+                            <div class="name">${player.name}</div>
+                            <div class="deaths-value">${player.deaths}</div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-deaths" style="width: ${width}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                            </div>
+                        </div>
+                    </div>
+                    <div class="total">
+                        <div class="total-item">
+                            Общие траты: <span class="total-value">${formatGold(totalGold)}</span>
+                        </div>
+                        <div class="total-item">
+                            Всего смертей: <span class="total-deaths">${totalDeaths}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('chartOutput').innerHTML = html;
+            document.getElementById('screenshotControls').style.display = 'flex';
+            
+            // Сбрасываем состояние кнопки скриншота
+            const screenshotBtn = document.getElementById('screenshotBtn');
+            screenshotBtn.disabled = false;
+            screenshotBtn.textContent = '📸 Сделать скриншот графика';
+        }
+        
+        function clearData() {
+            document.getElementById('logData').value = '';
+            document.getElementById('raidName').value = '';
+            document.getElementById('raidDate').value = '';
+            document.getElementById('chartOutput').innerHTML = '';
+            document.getElementById('screenshotControls').style.display = 'none';
+        }
+        
+        function takeScreenshot() {
+            const chartContainer = document.getElementById('chartContainer');
+            const screenshotBtn = document.getElementById('screenshotBtn');
+            
+            // Проверяем, существует ли контейнер графика
+            if (!chartContainer) {
+                alert('Сначала сгенерируйте график');
+                return;
+            }
+            
+            // Блокируем кнопку и меняем текст
+            screenshotBtn.disabled = true;
+            screenshotBtn.textContent = '📸 Создаем скриншот...';
+            
+            html2canvas(chartContainer, {
+                backgroundColor: '#1e1f22',
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                foreignObjectRendering: false
+            }).then(canvas => {
+                // Создаем ссылку для скачивания
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const raidName = document.getElementById('raidName').value || 'raid';
+                link.download = `${raidName}-chart-${timestamp}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Возвращаем кнопку в исходное состояние
+                screenshotBtn.disabled = false;
+                screenshotBtn.textContent = '📸 Сделать скриншот графика';
+                
+            }).catch(error => {
+                console.error('Ошибка при создании скриншота:', error);
+                
+                // Возвращаем кнопку в исходное состояние даже при ошибке
+                screenshotBtn.disabled = false;
+                screenshotBtn.textContent = '📸 Сделать скриншот графика';
+                
+                alert('Произошла ошибка при создании скриншота. Попробуйте еще раз.');
+            });
+        }
+    </script>
+</body>
+</html>
