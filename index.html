@@ -492,7 +492,7 @@
             
             // Колонка ДПС
             dpsPlayers.forEach((player, index) => {
-                const width = (player.damage / maxDPS * 100);
+                const width = Math.max(0.5, player.damage / maxDPS * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
@@ -516,7 +516,7 @@
             
             // Колонка ХПС
             hpsPlayers.forEach((player, index) => {
-                const width = (player.healing / maxHPS * 100);
+                const width = Math.max(0.5, player.healing / maxHPS * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
@@ -540,7 +540,7 @@
             
             // Колонка с расходами
             sortedByGold.forEach((player, index) => {
-                const width = (player.totalSpent / maxGold * 100);
+                const width = Math.max(0.5, player.totalSpent / maxGold * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
@@ -564,7 +564,7 @@
             
             // Колонка со смертями
             sortedByDeaths.forEach((player, index) => {
-                const width = (player.deaths / maxDeaths * 100);
+                const width = Math.max(0.5, player.deaths / maxDeaths * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
