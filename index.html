@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор графика расходников</title>
+    <title>Генератор графика для рейдов от Wht Mst (Misha from O N L I N E)</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         body {
@@ -14,7 +14,7 @@
             color: #dcddde;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         .input-section {
@@ -55,6 +55,17 @@
         input:focus {
             outline: none;
             border-color: #ff8000;
+        }
+        .data-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .data-inputs h3 {
+            color: #ffd100;
+            font-size: 14px;
+            margin: 0 0 8px 0;
         }
         textarea {
             width: 100%;
@@ -126,7 +137,7 @@
         }
         .columns {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 30px;
         }
         .column h2 {
@@ -149,11 +160,19 @@
             font-size: 12px;
         }
         .name {
-            color: #00ff96;
+            color: #ffffff;
             font-weight: 600;
         }
         .value {
             color: #ffd100;
+            font-weight: 600;
+        }
+        .dps-value {
+            color: #5599ff;
+            font-weight: 600;
+        }
+        .hps-value {
+            color: #44ff88;
             font-weight: 600;
         }
         .deaths-value {
@@ -166,6 +185,18 @@
             border-radius: 3px;
             overflow: hidden;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .bar-dps {
+            height: 100%;
+            background: linear-gradient(90deg, #5599ff 0%, #3366cc 100%);
+            border-radius: 3px;
+            box-shadow: 0 0 6px rgba(85, 153, 255, 0.4);
+        }
+        .bar-hps {
+            height: 100%;
+            background: linear-gradient(90deg, #44ff88 0%, #22cc66 100%);
+            border-radius: 3px;
+            box-shadow: 0 0 6px rgba(68, 255, 136, 0.4);
         }
         .bar-gold {
             height: 100%;
@@ -193,6 +224,16 @@
         }
         .total-value {
             color: #ffd100;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .total-dps {
+            color: #5599ff;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .total-hps {
+            color: #44ff88;
             font-weight: bold;
             font-size: 18px;
         }
@@ -242,15 +283,31 @@
                 </div>
             </div>
             
-            <h2>Вставь данные логов:</h2>
-            <textarea id="logData" placeholder="Вставь сюда данные в формате:
-Игрок deaths:X
+            <h2>Вставьте данные логов с сайта (melbalabs.com/summarize_consumes/):</h2>
+            <div class="data-inputs">
+                <div>
+                    <h3>Данные "Damage Done":</h3>
+                    <textarea id="dpsData" placeholder="Ник  число
+  способность  урон
+  ..."></textarea>
+                </div>
+                <div>
+                    <h3>Данные "Healing and Overhealing Done":</h3>
+                    <textarea id="hpsData" placeholder="Ник  число
+  заклинание  хил
+  ..."></textarea>
+                </div>
+                <div>
+                    <h3>Данные "Summary (расходники)":</h3>
+                    <textarea id="logData" placeholder="Игрок deaths:X
    предмет количество (цена)
    ...
    total spent: Xg Xs Xc"></textarea>
+                </div>
+            </div>
             <div class="controls">
                 <button onclick="parseData()">Сгенерировать график</button>
-                <button onclick="clearData()">Очистить</button>
+                <button onclick="clearData()">Очистить данные</button>
             </div>
         </div>
         
@@ -267,10 +324,57 @@
     </div>
 
     <script>
+        function parseDPSData() {
+            const input = document.getElementById('dpsData').value;
+            const lines = input.split('\n');
+            const players = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Пропускаем пустые строки и строки с отступами (скиллы)
+                if (!line || line.startsWith(' ') || line.startsWith('\t')) continue;
+                
+                const match = line.match(/^(.+?)\s+(\d+)$/);
+                if (match) {
+                    players.push({
+                        name: match[1].trim(),
+                        damage: parseInt(match[2])
+                    });
+                }
+            }
+            
+            return players.sort((a, b) => b.damage - a.damage);
+        }
+        
+        function parseHPSData() {
+            const input = document.getElementById('hpsData').value;
+            const lines = input.split('\n');
+            const players = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Пропускаем пустые строки и строки с отступами (скиллы)
+                if (!line || line.startsWith(' ') || line.startsWith('\t')) continue;
+                
+                const match = line.match(/^(.+?)\s+(\d+)$/);
+                if (match) {
+                    players.push({
+                        name: match[1].trim(),
+                        healing: parseInt(match[2])
+                    });
+                }
+            }
+            
+            return players.sort((a, b) => b.healing - a.healing);
+        }
+        
         function parseData() {
             const input = document.getElementById('logData').value;
-            const raidName = document.getElementById('raidName').value || 'Рейд';
+            const raidName = document.getElementById('raidName').value || 'Название не указано';
             const raidDate = document.getElementById('raidDate').value || 'Дата не указана';
+            
+            const dpsPlayers = parseDPSData();
+            const hpsPlayers = parseHPSData();
             
             const lines = input.split('\n');
             
@@ -340,29 +444,33 @@
                 players.push(currentPlayer);
             }
             
-            generateChart(players, raidName, raidDate);
+            generateChart(dpsPlayers, hpsPlayers, players, raidName, raidDate);
         }
         
-        function generateChart(players, raidName, raidDate) {
+        function generateChart(dpsPlayers, hpsPlayers, players, raidName, raidDate) {
             // Сортируем игроков по потраченной сумме (по убыванию)
             const sortedByGold = players.filter(p => p.totalSpent > 0)
                                       .sort((a, b) => b.totalSpent - a.totalSpent);
             
-            // Сортируем игроков по смертям (по убыванию), затем по имени
+            // Сортируем игроков по смертям (по возрастанию), затем по имени
             const sortedByDeaths = [...players].sort((a, b) => {
-                if (b.deaths !== a.deaths) {
-                    return b.deaths - a.deaths;
+                if (a.deaths !== b.deaths) {
+                    return a.deaths - b.deaths;
                 }
                 return a.name.localeCompare(b.name);
             });
             
             // Находим максимальные значения для масштабирования
-            const maxGold = Math.max(...sortedByGold.map(p => p.totalSpent));
-            const maxDeaths = Math.max(...players.map(p => p.deaths));
+            const maxGold = Math.max(...sortedByGold.map(p => p.totalSpent), 1);
+            const maxDeaths = Math.max(...players.map(p => p.deaths), 1);
+            const maxDPS = Math.max(...dpsPlayers.map(p => p.damage), 1);
+            const maxHPS = Math.max(...hpsPlayers.map(p => p.healing), 1);
             
             // Считаем общие суммы
             const totalGold = players.reduce((sum, p) => sum + p.totalSpent, 0);
             const totalDeaths = players.reduce((sum, p) => sum + p.deaths, 0);
+            const totalDPS = dpsPlayers.reduce((sum, p) => sum + p.damage, 0);
+            const totalHPS = hpsPlayers.reduce((sum, p) => sum + p.healing, 0);
             
             // Форматируем золото
             function formatGold(amount) {
@@ -375,20 +483,68 @@
             // Генерируем HTML
             let html = `
                 <div class="chart-container" id="chartContainer">
-                    <h1>Потраченная химия рейдом на ${raidName} (${raidDate})</h1>
+                    <h1>График рейда "${raidName}" | ${raidDate}</h1>
                     <div class="columns">
                         <div class="column">
-                            <h2>💰 Расходники (голда)</h2>
+                            <h2>⚔️ Нанесенный урон (УВС)</h2>
+                            <div class="chart">
+            `;
+            
+            // Колонка ДПС
+            dpsPlayers.forEach((player, index) => {
+                const width = (player.damage / maxDPS * 100);
+                html += `
+                    <div class="row">
+                        <div class="player-info">
+                            <div class="name">${index + 1}. ${player.name}</div>
+                            <div class="dps-value">${player.damage.toLocaleString()}</div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-dps" style="width: ${width}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                            </div>
+                        </div>
+                        <div class="column">
+                            <h2>💚 Исцеление (ИВС) + Оверхил</h2>
+                            <div class="chart">
+            `;
+            
+            // Колонка ХПС
+            hpsPlayers.forEach((player, index) => {
+                const width = (player.healing / maxHPS * 100);
+                html += `
+                    <div class="row">
+                        <div class="player-info">
+                            <div class="name">${index + 1}. ${player.name}</div>
+                            <div class="hps-value">${player.healing.toLocaleString()}</div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-hps" style="width: ${width}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                            </div>
+                        </div>
+                        <div class="column">
+                            <h2>💰 Расходники (золото)</h2>
                             <div class="chart">
             `;
             
             // Колонка с расходами
-            sortedByGold.forEach(player => {
-                const width = maxGold > 0 ? (player.totalSpent / maxGold * 100) : 0;
+            sortedByGold.forEach((player, index) => {
+                const width = (player.totalSpent / maxGold * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
-                            <div class="name">${player.name}</div>
+                            <div class="name">${index + 1}. ${player.name}</div>
                             <div class="value">${formatGold(player.totalSpent)}</div>
                         </div>
                         <div class="bar-container">
@@ -407,12 +563,12 @@
             `;
             
             // Колонка со смертями
-            sortedByDeaths.forEach(player => {
-                const width = maxDeaths > 0 ? (player.deaths / maxDeaths * 100) : 0;
+            sortedByDeaths.forEach((player, index) => {
+                const width = (player.deaths / maxDeaths * 100);
                 html += `
                     <div class="row">
                         <div class="player-info">
-                            <div class="name">${player.name}</div>
+                            <div class="name">${index + 1}. ${player.name}</div>
                             <div class="deaths-value">${player.deaths}</div>
                         </div>
                         <div class="bar-container">
@@ -428,10 +584,16 @@
                     </div>
                     <div class="total">
                         <div class="total-item">
-                            Общие траты: <span class="total-value">${formatGold(totalGold)}</span>
+                            ⚔️ Итоговый урон: <span class="total-dps">${totalDPS.toLocaleString()}</span>
                         </div>
                         <div class="total-item">
-                            Всего смертей: <span class="total-deaths">${totalDeaths}</span>
+                            💚 Итоговое исцеление: <span class="total-hps">${totalHPS.toLocaleString()}</span>
+                        </div>
+                        <div class="total-item">
+                            💰 Итоговые затраты золота: <span class="total-value">${formatGold(totalGold)}</span>
+                        </div>
+                        <div class="total-item">
+                            💀 Итоговое кол-во смертей: <span class="total-deaths">${totalDeaths}</span>
                         </div>
                     </div>
                 </div>
@@ -447,6 +609,8 @@
         }
         
         function clearData() {
+            document.getElementById('dpsData').value = '';
+            document.getElementById('hpsData').value = '';
             document.getElementById('logData').value = '';
             document.getElementById('raidName').value = '';
             document.getElementById('raidDate').value = '';
