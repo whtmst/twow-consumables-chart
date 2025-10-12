@@ -275,7 +275,6 @@
 		    cursor: help;
 		    margin-left: 5px;
 		}
-		
 		.help-tooltip .tooltip-text {
 		    visibility: hidden;
 		    width: 300px;
@@ -295,7 +294,6 @@
 		    opacity: 0;
 		    transition: opacity 0.3s;
 		}
-		
 		.help-tooltip .tooltip-text::after {
 		    content: "";
 		    position: absolute;
@@ -306,16 +304,18 @@
 		    border-style: solid;
 		    border-color: #1e1f22 transparent transparent transparent;
 		}
-		
 		.help-tooltip:hover .tooltip-text {
 		    visibility: visible;
 		    opacity: 1;
 		}
-		
 		.help-icon {
 		    color: #ffd100;
 		    font-size: 14px;
 		    font-weight: bold;
+		}
+		.help-tooltip .separator {
+		    margin: 0 5px;
+		    color: #666;
 		}
     </style>
 </head>
@@ -334,15 +334,14 @@
                 </div>
             </div>
             
-			<h2>Вставьте данные логов с сайта:
-			    <span class="help-tooltip">
-			        <span class="help-icon">[?]</span>
-			        <span class="tooltip-text">
-			            <a href="https://melbalabs.com/summarize_consumes/" target="_blank">melbalabs.com/summarize_consumes/</a>
-			            <span class="separator">или</span>
-			            <a href="https://whtmst.github.io/summarize_consumes/" target="_blank">whtmst.github.io/summarize_consumes/</a>
-			        </span>
-			    </span>
+			<h2>Вставьте данные логов с сайта: <span class="help-tooltip">
+				<span class="help-icon">[?]</span>
+				<span class="tooltip-text">
+				<a href="https://melbalabs.com/summarize_consumes/" target="_blank">melbalabs.com/summarize_consumes/</a>
+				<span class="separator">или</span>
+				<a href="https://whtmst.github.io/summarize_consumes/" target="_blank">whtmst.github.io/summarize_consumes/</a>
+				</span>
+			</span>
 			</h2>
             <div class="data-inputs">
                 <div>
