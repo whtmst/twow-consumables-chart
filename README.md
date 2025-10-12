@@ -4,7 +4,7 @@
 
 ## Как использовать
 
-1. Загрузите ваши логи на https://melbalabs.com/summarize_consumes/
+1. Загрузите ваши логи на https://melbalabs.com/summarize_consumes/ или https://whtmst.github.io/summarize_consumes/ (только сервер Ambershire)
 2. Скопируйте данные потраченных расходниках из логов рейда которые вам выдал сайт выше
 3. Вставьте в текстовое поле
 4. Нажмите "Сгенерировать график"
