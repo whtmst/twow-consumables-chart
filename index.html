@@ -266,6 +266,28 @@
             color: #ff8000;
             text-decoration: underline;
         }
+		.website-links {
+		    text-align: center;
+		    margin-bottom: 15px;
+		    font-size: 12px;
+		    color: #888;
+		}
+		
+		.website-links a {
+		    color: #ffd100;
+		    text-decoration: none;
+		    transition: color 0.2s;
+		}
+		
+		.website-links a:hover {
+		    color: #ff8000;
+		    text-decoration: underline;
+		}
+		
+		.website-links .separator {
+		    margin: 0 8px;
+		    color: #666;
+		}
     </style>
 </head>
 <body>
@@ -283,7 +305,12 @@
                 </div>
             </div>
             
-            <h2>Вставьте данные логов с сайта (melbalabs.com/summarize_consumes/ или whtmst.github.io/summarize_consumes/):</h2>
+            <h2>Вставьте данные логов с сайта:</h2>
+				<div class="website-links">
+				    <a href="https://melbalabs.com/summarize_consumes/" target="_blank">melbalabs.com/summarize_consumes/</a>
+				    <span class="separator">или</span>
+				    <a href="https://whtmst.github.io/summarize_consumes/" target="_blank">whtmst.github.io/summarize_consumes/</a>
+				</div>
             <div class="data-inputs">
                 <div>
                     <h3>Данные "Damage Done":</h3>
