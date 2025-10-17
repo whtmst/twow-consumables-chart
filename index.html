@@ -173,10 +173,12 @@
         .dps-value {
             color: #5599ff;
             font-weight: 600;
+            text-align: right;
         }
         .hps-value {
             color: #44ff88;
             font-weight: 600;
+            text-align: right;
         }
         .deaths-value {
             color: #ff4444;
@@ -277,7 +279,7 @@
 		}
 		.help-tooltip .tooltip-text {
 		    visibility: hidden;
-		    width: 300px;
+		    width: auto;
 		    background-color: #1e1f22;
 		    color: #dcddde;
 		    text-align: center;
@@ -337,22 +339,24 @@
                     <input type="text" id="raidDate" placeholder="Например: 04.10.25 05:04 PM">
                 </div>
             </div>
-			<h2>Вставьте данные логов с <span class="help-tooltip">сайта<span class="tooltip-text"><a href="https://melbalabs.com/summarize_consumes/" target="_blank">melbalabs.com/summarize_consumes/</a><span class="separator">или</span><a href="https://whtmst.github.io/summarize_consumes/" target="_blank">whtmst.github.io/summarize_consumes/</a></span></span>:</h2>
+			<h2>Вставьте данные логов с <span class="help-tooltip">сайта<span class="tooltip-text"><a href="https://www.turtlogs.com/" target="_blank">www.turtlogs.com</a><span class="separator">и</span><a href="https://whtmst.github.io/summarize_consumes/" target="_blank">www.whtmst.github.io/summarize_consumes</a><span class="separator">или</span><a href="https://melbalabs.com/summarize_consumes/" target="_blank">www.melbalabs.com/summarize_consumes</a></span></span>:</h2>
             <div class="data-inputs">
                 <div>
-                    <h3>Данные "Damage Done":</h3>
-                    <textarea id="dpsData" placeholder="Ник  число
-  способность  урон
-  ..."></textarea>
+                    <h3>Данные "Damage done":</h3>
+                    <textarea id="dpsData" placeholder="1. Игрок - 94,669 (554.0/s) - 5.5%
+2. Игрок - 89,055 (521.2/s) - 5.1%
+3. Игрок - 88,177 (516.0/s) - 5.1%
+..."></textarea>
                 </div>
                 <div>
-                    <h3>Данные "Healing and Overhealing Done":</h3>
-                    <textarea id="hpsData" placeholder="Ник  число
-  заклинание  хил
-  ..."></textarea>
+                    <h3>Данные "Effective healing done":</h3>
+                    <textarea id="hpsData" placeholder="1. Игрок - 22,595 (132.2/s) - 21.5%
+2. Игрок - 18,410 (107.7/s) - 17.5%
+3. Игрок - 15,880 (92.9/s) - 15.1%
+..."></textarea>
                 </div>
                 <div>
-                    <h3>Данные "Summary (расходники)":</h3>
+                    <h3>Данные "Summary (расходники и смерти)":</h3>
                     <textarea id="logData" placeholder="Игрок deaths:X
    предмет количество (цена)
    ...
@@ -384,15 +388,18 @@
             const players = [];
             
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                // Пропускаем пустые строки и строки с отступами (скиллы)
-                if (!line || line.startsWith(' ') || line.startsWith('\t')) continue;
+                const line = lines[i].trim();
+                if (!line) continue;
                 
-                const match = line.match(/^(.+?)\s+(\d+)$/);
+                // Регулярное выражение для нового формата: "1. Misha - 94,669 (554.0/s) - 5.5%"
+                const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d,]+)\s+\(([\d.]+)\/s\)\s+-\s+([\d.]+)%$/);
                 if (match) {
+                    const damage = parseInt(match[2].replace(/,/g, ''));
                     players.push({
                         name: match[1].trim(),
-                        damage: parseInt(match[2])
+                        damage: damage,
+                        dps: match[3],
+                        percentage: match[4]
                     });
                 }
             }
@@ -406,15 +413,18 @@
             const players = [];
             
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                // Пропускаем пустые строки и строки с отступами (скиллы)
-                if (!line || line.startsWith(' ') || line.startsWith('\t')) continue;
+                const line = lines[i].trim();
+                if (!line) continue;
                 
-                const match = line.match(/^(.+?)\s+(\d+)$/);
+                // Регулярное выражение для нового формата: "1. Misha - 22,595 (132.2/s) - 21.5%"
+                const match = line.match(/^\d+\.\s+(.+?)\s+-\s+([\d,]+)\s+\(([\d.]+)\/s\)\s+-\s+([\d.]+)%$/);
                 if (match) {
+                    const healing = parseInt(match[2].replace(/,/g, ''));
                     players.push({
                         name: match[1].trim(),
-                        healing: parseInt(match[2])
+                        healing: healing,
+                        hps: match[3],
+                        percentage: match[4]
                     });
                 }
             }
@@ -551,7 +561,7 @@
                     <div class="row">
                         <div class="player-info">
                             <div class="name">${index + 1}. ${player.name}</div>
-                            <div class="dps-value">${player.damage.toLocaleString()}</div>
+                            <div class="dps-value">${player.damage.toLocaleString()} (${player.dps}/s) - ${player.percentage}%</div>
                         </div>
                         <div class="bar-container">
                             <div class="bar-dps" style="width: ${width}%;"></div>
@@ -564,7 +574,7 @@
                             </div>
                         </div>
                         <div class="column">
-                            <h2>💚 Исцеление (ИВС) + Оверхил</h2>
+                            <h2>💚 Эффективное исцеление (ИВС)</h2>
                             <div class="chart">
             `;
             
@@ -575,7 +585,7 @@
                     <div class="row">
                         <div class="player-info">
                             <div class="name">${index + 1}. ${player.name}</div>
-                            <div class="hps-value">${player.healing.toLocaleString()}</div>
+                            <div class="hps-value">${player.healing.toLocaleString()} (${player.hps}/s) - ${player.percentage}%</div>
                         </div>
                         <div class="bar-container">
                             <div class="bar-hps" style="width: ${width}%;"></div>
@@ -641,7 +651,7 @@
                             ⚔️ Итоговый урон: <span class="total-dps">${totalDPS.toLocaleString()}</span>
                         </div>
                         <div class="total-item">
-                            💚 Итоговое исцеление: <span class="total-hps">${totalHPS.toLocaleString()}</span>
+                            💚 Итоговое эффективное исцеление: <span class="total-hps">${totalHPS.toLocaleString()}</span>
                         </div>
                         <div class="total-item">
                             💰 Итоговые затраты золота: <span class="total-value">${formatGold(totalGold)}</span>
