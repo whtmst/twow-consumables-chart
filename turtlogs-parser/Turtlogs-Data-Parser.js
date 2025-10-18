@@ -106,7 +106,7 @@
         return output;
     }
 
-    // ИСПРАВЛЕННЫЙ ПАРСЕР
+    // ПАРСЕР С РЕГУЛЯРНЫМИ ВЫРАЖЕНИЯМИ
     function parseCombatDataFixed() {
         const bars = document.querySelectorAll('.bar');
         const result = {
@@ -124,80 +124,70 @@
             if (!rankMatch) return;
 
             const rank = parseInt(rankMatch[1]);
-            let remaining = text.substring(rankMatch[0].length);
+            let remaining = text.substring(rankMatch[0].length).trim();
 
-            // Извлекаем имя (до первого числа)
-            let name = '';
-            let i = 0;
-            while (i < remaining.length && (isNaN(remaining[i]) || remaining[i] === ' ' || remaining[i] === '(')) {
-                name += remaining[i];
-                i++;
-            }
-            name = name.trim();
+            const nameMatch = remaining.match(/^([^\d]+)/);
+            if (!nameMatch) return;
 
-            // Оставшаяся часть: числа
-            remaining = remaining.substring(i);
+            const name = nameMatch[1].trim();
+            remaining = remaining.substring(nameMatch[0].length);
 
-            let damage, dps, percentage;
+            const percentMatch = remaining.match(/(\d+\.\d+)%$/);
+            if (!percentMatch) return;
+            const percentage = percentMatch[1] + '%';
 
-            // Определяем есть ли запятая
-            const hasComma = remaining.includes(',');
+            remaining = remaining.substring(0, remaining.lastIndexOf(percentMatch[0]));
 
-            if (hasComma) {
-                // ФОРМАТ С ЗАПЯТОЙ
-                // Находим позицию запятой
-                const commaIndex = remaining.indexOf(',');
+            const slashIndex = remaining.lastIndexOf('/s');
+            if (slashIndex === -1) return;
 
-                // damage заканчивается через 3 цифры после запятой
-                const damageEnd = commaIndex + 4; // ",669" -> 4 символа
-                damage = remaining.substring(0, damageEnd); // "94,669"
+            const beforeSlash = remaining.substring(0, slashIndex);
 
-                // Остаток после damage
-                let numbersPart = remaining.substring(damageEnd); // "554.0/s5.5%"
+            let damage, dps;
+            const lastCommaIndex = beforeSlash.lastIndexOf(',');
 
-                // Теперь нужно правильно извлечь DPS
-                // DPS может быть: "554.0" (3 цифры + . + 1 цифра) ИЛИ "69.1" (2 цифры + . + 1 цифра)
-                const slashIndex = numbersPart.indexOf('/s');
-                if (slashIndex === -1) return;
+            if (lastCommaIndex !== -1) {
+                const afterComma = beforeSlash.substring(lastCommaIndex + 1);
 
-                const beforeSlash = numbersPart.substring(0, slashIndex); // "554.0" или "69.1"
-
-                // Определяем длину DPS по формату X.X
-                const dotIndex = beforeSlash.indexOf('.');
-                if (dotIndex === -1) return;
-
-                // DPS всегда имеет формат "XXX.X" или "XX.X"
-                // Проверяем сколько цифр до точки
-                if (dotIndex === 3) {
-                    // Формат "554.0" - берем все 5 символов
-                    dps = beforeSlash.substring(0, 5);
-                } else if (dotIndex === 2) {
-                    // Формат "69.1" - берем все 4 символа
-                    dps = beforeSlash.substring(0, 4);
+                if (afterComma.length >= 6) {
+                    damage = beforeSlash.substring(0, lastCommaIndex + 4);
+                    dps = beforeSlash.substring(lastCommaIndex + 4);
+                } else if (afterComma.length === 5) {
+                    if (afterComma.charAt(2) === '.') {
+                        damage = beforeSlash.substring(0, lastCommaIndex + 1);
+                        dps = afterComma;
+                    } else {
+                        damage = beforeSlash.substring(0, lastCommaIndex + 4);
+                        dps = beforeSlash.substring(lastCommaIndex + 4);
+                    }
                 } else {
-                    dps = beforeSlash;
+                    damage = beforeSlash.substring(0, lastCommaIndex + 4);
+                    dps = beforeSlash.substring(lastCommaIndex + 4);
                 }
-
-                // Процент
-                numbersPart = numbersPart.substring(slashIndex + 2);
-                const percentMatch = numbersPart.match(/(\d+\.\d+)%$/);
-                percentage = percentMatch ? percentMatch[1] + '%' : '0%';
-
             } else {
-                // ФОРМАТ БЕЗ ЗАПЯТОЙ
-                const slashIndex = remaining.indexOf('/s');
-                if (slashIndex === -1) return;
+                // Нет запятой - ищем DPS как X.X формат (не более 1 цифры перед точкой)
+                const dpsMatch = beforeSlash.match(/(\d\.\d)$/);
+                if (!dpsMatch) {
+                    // Попробуем XX.X или XXX.X если число большое
+                    const dpsMatch2 = beforeSlash.match(/(\d{1,3}\.\d)$/);
+                    if (!dpsMatch2) return;
 
-                const beforeSlash = remaining.substring(0, slashIndex);
-                const afterSlash = remaining.substring(slashIndex + 2);
+                    dps = dpsMatch2[1];
+                    damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
 
-                // dps всегда последние 3 символа перед /s
-                dps = beforeSlash.substring(beforeSlash.length - 3);
-                damage = beforeSlash.substring(0, beforeSlash.length - 3);
-
-                // Процент
-                const percentMatch = afterSlash.match(/(\d+\.\d+)%$/);
-                percentage = percentMatch ? percentMatch[1] + '%' : '0%';
+                    // Проверка: если damage получился < 2 символов, значит взяли лишнее из DPS
+                    if (damage.length < 2) {
+                        // Берем только последнюю цифру перед точкой для DPS
+                        const dpsFixed = beforeSlash.match(/(\d\.\d)$/);
+                        if (dpsFixed) {
+                            dps = dpsFixed[1];
+                            damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
+                        }
+                    }
+                } else {
+                    dps = dpsMatch[1];
+                    damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
+                }
             }
 
             if (!damage || !dps) {
