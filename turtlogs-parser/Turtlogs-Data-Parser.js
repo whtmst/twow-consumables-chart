@@ -24,29 +24,25 @@
         button.textContent = '📊 Экспорт данных';
         button.style.cssText = `
             position: fixed;
-            top: 65px;
-            right: 25px;
+            top: 7px;
+            right: 250px;
             z-index: 9999;
-            padding: 12px 16px;
-            background: #4CAF50;
+            padding: 8px 14px;
+            background: #4e9f2a;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
         `;
 
         button.addEventListener('mouseover', function() {
-            this.style.background = '#45a049';
-            this.style.transform = 'translateY(-2px)';
+            this.style.background = '#90da00';
         });
 
         button.addEventListener('mouseout', function() {
-            this.style.background = '#4CAF50';
-            this.style.transform = 'translateY(0)';
+            this.style.background = '#4e9f2a';
         });
 
         button.onclick = function() {
