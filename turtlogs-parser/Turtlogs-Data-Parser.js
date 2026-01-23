@@ -25,24 +25,27 @@
         button.style.cssText = `
             position: fixed;
             top: 7px;
-            right: 250px;
+            right: 235px;
             z-index: 9999;
-            padding: 8px 14px;
-            background: #4e9f2a;
-            color: white;
+            padding: 8px 12px;
+            background: rgb(89, 130, 27);
+            color: rgb(255, 255, 255);
+            text-transform: uppercase;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
+            transition: 0.3s;
+            transform: translateY(0px);
         `;
 
         button.addEventListener('mouseover', function() {
-            this.style.background = '#90da00';
+            this.style.background = '#d97706';
         });
 
         button.addEventListener('mouseout', function() {
-            this.style.background = '#4e9f2a';
+            this.style.background = '#59821b';
         });
 
         button.onclick = function() {
