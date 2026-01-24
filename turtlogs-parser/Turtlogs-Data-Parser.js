@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Turtlogs Data Parser
 // @namespace    http://tampermonkey.net/
-// @version      1.6
-// @description  Парсит данные с turtlogs.com
+// @version      1.7
+// @description  Парсит данные с turtlogs.com, игнорируя мусорные записи в скобках
 // @author       Wht Mst
 // @match        https://www.turtlogs.com/viewer/*
 // @grant        GM_setClipboard
@@ -59,7 +59,7 @@
         const data = parseCombatDataFixed();
 
         if (data.damage.length === 0 && data.healing.length === 0) {
-            showNotification('❌ Данные не найдены! Убедитесь что фильтры установлены и данные загружены.', 'error');
+            showNotification('❌ Данные не найдены!', 'error');
             return;
         }
 
@@ -88,13 +88,14 @@
 
     function formatDataForExport(data) {
         let output = '=== DAMAGE DONE DATA ===\n';
-        data.damage.forEach(item => {
-            output += `${item.rank}. ${item.name} - ${item.damage} (${item.dps}/s) - ${item.percentage}\n`;
+        data.damage.forEach((item, index) => {
+            // Используем index + 1 для красивой нумерации
+            output += `${index + 1}. ${item.name} - ${item.damage} (${item.dps}/s) - ${item.percentage}\n`;
         });
 
         output += '\n=== EFFECTIVE HEALING DONE DATA ===\n';
-        data.healing.forEach(item => {
-            output += `${item.rank}. ${item.name} - ${item.healing} (${item.hps}/s) - ${item.percentage}\n`;
+        data.healing.forEach((item, index) => {
+            output += `${index + 1}. ${item.name} - ${item.healing} (${item.hps}/s) - ${item.percentage}\n`;
         });
 
         output += `\n=== SUMMARY ===\n`;
@@ -105,117 +106,104 @@
         return output;
     }
 
-    // ПАРСЕР С РЕГУЛЯРНЫМИ ВЫРАЖЕНИЯМИ
     function parseCombatDataFixed() {
-        const bars = document.querySelectorAll('.bar');
         const result = {
             damage: [],
             healing: []
         };
 
-        console.log(`Found ${bars.length} bars`);
+        const leftMeter = document.getElementById('left_meter');
+        const allMeters = Array.from(document.querySelectorAll('raidmeter'));
+        const rightMeter = allMeters.find(m => m.id !== 'left_meter');
 
-        bars.forEach((bar, index) => {
+        function extractBarData(bar) {
             const text = bar.textContent.trim();
-            console.log(`Parsing: "${text}"`);
-
             const rankMatch = text.match(/^(\d+)\./);
-            if (!rankMatch) return;
+            if (!rankMatch) return null;
 
-            const rank = parseInt(rankMatch[1]);
             let remaining = text.substring(rankMatch[0].length).trim();
-
             const nameMatch = remaining.match(/^([^\d]+)/);
-            if (!nameMatch) return;
+            if (!nameMatch) return null;
 
             const name = nameMatch[1].trim();
             remaining = remaining.substring(nameMatch[0].length);
 
             const percentMatch = remaining.match(/(\d+\.\d+)%$/);
-            if (!percentMatch) return;
+            if (!percentMatch) return null;
             const percentage = percentMatch[1] + '%';
-
             remaining = remaining.substring(0, remaining.lastIndexOf(percentMatch[0]));
 
             const slashIndex = remaining.lastIndexOf('/s');
-            if (slashIndex === -1) return;
-
+            if (slashIndex === -1) return null;
             const beforeSlash = remaining.substring(0, slashIndex);
 
-            let damage, dps;
+            let value, perSecond;
             const lastCommaIndex = beforeSlash.lastIndexOf(',');
 
             if (lastCommaIndex !== -1) {
                 const afterComma = beforeSlash.substring(lastCommaIndex + 1);
-
                 if (afterComma.length >= 6) {
-                    damage = beforeSlash.substring(0, lastCommaIndex + 4);
-                    dps = beforeSlash.substring(lastCommaIndex + 4);
+                     value = beforeSlash.substring(0, lastCommaIndex + 4);
+                     perSecond = beforeSlash.substring(lastCommaIndex + 4);
                 } else if (afterComma.length === 5) {
                     if (afterComma.charAt(2) === '.') {
-                        damage = beforeSlash.substring(0, lastCommaIndex + 1);
-                        dps = afterComma;
+                        value = beforeSlash.substring(0, lastCommaIndex + 1);
+                        perSecond = afterComma;
                     } else {
-                        damage = beforeSlash.substring(0, lastCommaIndex + 4);
-                        dps = beforeSlash.substring(lastCommaIndex + 4);
+                        value = beforeSlash.substring(0, lastCommaIndex + 4);
+                        perSecond = beforeSlash.substring(lastCommaIndex + 4);
                     }
                 } else {
-                    damage = beforeSlash.substring(0, lastCommaIndex + 4);
-                    dps = beforeSlash.substring(lastCommaIndex + 4);
+                    value = beforeSlash.substring(0, lastCommaIndex + 4);
+                    perSecond = beforeSlash.substring(lastCommaIndex + 4);
                 }
             } else {
-                // Нет запятой - ищем DPS как X.X формат (не более 1 цифры перед точкой)
                 const dpsMatch = beforeSlash.match(/(\d\.\d)$/);
                 if (!dpsMatch) {
-                    // Попробуем XX.X или XXX.X если число большое
                     const dpsMatch2 = beforeSlash.match(/(\d{1,3}\.\d)$/);
-                    if (!dpsMatch2) return;
-
-                    dps = dpsMatch2[1];
-                    damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
-
-                    // Проверка: если damage получился < 2 символов, значит взяли лишнее из DPS
-                    if (damage.length < 2) {
-                        // Берем только последнюю цифру перед точкой для DPS
-                        const dpsFixed = beforeSlash.match(/(\d\.\d)$/);
-                        if (dpsFixed) {
-                            dps = dpsFixed[1];
-                            damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
-                        }
-                    }
+                    if (!dpsMatch2) return null;
+                    perSecond = dpsMatch2[1];
+                    value = beforeSlash.substring(0, beforeSlash.length - perSecond.length);
                 } else {
-                    dps = dpsMatch[1];
-                    damage = beforeSlash.substring(0, beforeSlash.length - dps.length);
+                    perSecond = dpsMatch[1];
+                    value = beforeSlash.substring(0, beforeSlash.length - perSecond.length);
                 }
             }
 
-            if (!damage || !dps) {
-                console.log('Failed to parse:', text);
-                return;
-            }
+            return { name, value, perSecond, percentage };
+        }
 
-            const data = {
-                rank: rank,
-                name: name,
-                dps: dps,
-                percentage: percentage
-            };
+        if (leftMeter) {
+            const damageBars = leftMeter.querySelectorAll('.bar');
+            damageBars.forEach(bar => {
+                const data = extractBarData(bar);
+                // ПРОВЕРКА НА СКОБКИ: если в имени есть ( — скипаем
+                if (data && !data.name.includes('(')) {
+                    result.damage.push({
+                        name: data.name,
+                        damage: data.value,
+                        dps: data.perSecond,
+                        percentage: data.percentage
+                    });
+                }
+            });
+        }
 
-            if (index <= 37) {
-                result.damage.push({
-                    ...data,
-                    damage: damage
-                });
-            } else {
-                result.healing.push({
-                    ...data,
-                    healing: damage,
-                    hps: dps
-                });
-            }
-
-            console.log(`Parsed: ${rank}. ${name} - ${damage} (${dps}/s) - ${percentage}`);
-        });
+        if (rightMeter) {
+            const healingBars = rightMeter.querySelectorAll('.bar');
+            healingBars.forEach(bar => {
+                const data = extractBarData(bar);
+                // Для хила обычно скобки не мешают, но если надо — можно добавить и сюда
+                if (data) {
+                    result.healing.push({
+                        name: data.name,
+                        healing: data.value,
+                        hps: data.perSecond,
+                        percentage: data.percentage
+                    });
+                }
+            });
+        }
 
         return result;
     }
